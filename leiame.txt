@@ -1,0 +1,43 @@
+/////////////////////////////
+Passos para ativar o vagrant 
+
+1.vagrant up
+
+2.ansible-playbook provisioning.yml -i hosts
+para carregar o ansible
+
+2. corrigir erro unreachable
+	na pasta 'ssh-keys' abra um terminal
+	execute os 3 comandos:
+	ssh-copy-id -i vagrant_id_rsa.pub vagrant@192.168.33.10
+	ssh-copy-id -i vagrant_id_rsa.pub vagrant@192.168.33.12
+	ssh-copy-id -i vagrant_id_rsa.pub vagrant@192.168.33.14
+
+	caso o programa peça uma senha: ela é vagrant
+
+
+	
+3.editar o arquivo host mudando o caminho da chave dentro da maquina para o seu usuario
+	ansible_user=vagrant ansible_ssh_private_key_file="/home(?)/usuario/pasta do projeto/.vagrant/machines/monitor/virtualbox/private_key"
+
+
+ordem das implementações:
+vagrant 
+virtual box
+ansible 
+
+servidor db
+	mysql-server
+		configurar senha root mysql (secret)
+	arquivo allow_external.cnf
+		[mysqld]
+		bind-address = 0.0.0.0
+
+	reiniciar mysql
+	criar esquema
+
+
+servidor web
+	tomcat7
+	http://192.168.33.12:8080 verificar se está rodando
+	mysql-server

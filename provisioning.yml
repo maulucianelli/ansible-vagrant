@@ -1,0 +1,105 @@
+---
+- hosts: all
+  tasks:
+
+    - name: Performa um apt update
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+      become: true
+
+    - name: Perfoma um apt upgrade
+      apt: upgrade=dist force_apt_get=yes
+      become: true
+#######################################
+- hosts: db
+  handlers:
+    - name: restart mysql
+      service:
+        name: mysql
+        state: restarted
+      become: yes
+  tasks:
+    - name: 'Instala pacotes de db'
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600 #1 hora
+        name: ['mysql-server','python-mysqldb','libmysqlclient-dev','mysql-client',
+        'python-mysqldb']
+        state: latest
+      become: yes
+
+    - name: 'Cria loja-schema'   
+      mysql_db:
+        name: lojaschema
+        login_user: root
+        state: present
+
+    - name: 'Cria usuario loja'
+      mysql_user:
+        login_user: root
+        name: loja
+        password: lojasecret
+        priv: 'lojaschema.*:ALL'
+        state: present
+
+    - name: 'Deleta conta anonima'
+      mysql_user:
+        login_user: root
+        name: ''
+        password: secret
+        state: absent
+
+    - name: 'allow external conf'
+      copy:
+        src: 'files/allow_external.cnf'
+        dest: '/etc/mysql/allow_external.cnf'
+      become: yes
+      notify:
+        - restart mysql
+###################################################
+- hosts: web
+  handlers:
+    - name: restart tomcat7
+      service:
+        name: tomcat7
+        state: restarted
+      become: yes
+
+  tasks:
+    - name: 'Instala pacotes de web'
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600 #1 hora
+        name: ['mysql-server','python-mysqldb', 'tomcat7']
+        state: latest
+      become: yes
+
+#copiar keystore pra /var/lib/tomcat7/conf
+
+ 
+    - name: 'keystore'
+      copy:
+        src: '~/ansible/files/.keystore'
+        dest: '/var/lib/tomcat7/conf/.keystore'
+      become: yes
+
+
+#copiar server.xml para /var/lib/tomcat7/conf/
+
+    - name: 'copia server.xml'
+      copy:
+        src: '~/ansible/files/server.xml'
+        dest: '/var/lib/tomcat7/conf/server.xml'
+      become: yes
+
+
+#copiar tomcat7 para /etc/default/
+
+
+    - name: 'copiar tomcat7'
+      copy:
+        src: '~/ansible/files/tomcat7'
+        dest: '/etc/default/tomcat7'
+      become: yes
+      notify:
+        - restart tomcat7
+
